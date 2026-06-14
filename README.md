@@ -63,6 +63,16 @@ mvnw.cmd spring-boot:run
 
 L'application démarre par défaut sur le port **8081**.
 
+## Comptes de test
+
+Au premier démarrage, l'application crée automatiquement 3 comptes de test (via `DataInitializer`) :
+
+| Rôle | Email | Mot de passe |
+|------|-------|--------------|
+| Administrateur | admin@test.com | admin |
+| Enseignant | prof@test.com | prof |
+| Étudiant | etudiant@test.com | etudiant |
+
 ## Accès à l'application
 
 - **API REST** : `http://localhost:8081/api`
