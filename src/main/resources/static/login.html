@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion - StudentData</title>
+  <link rel="stylesheet" href="/api/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+      /* Centrage vertical de la carte de connexion sur la page */
+      main {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: calc(100vh - 160px);
+          padding: 1.5rem;
+      }
+      .form-container {
+          margin: 0;
+          width: 100%;
+      }
+  </style>
+</head>
+<body>
+<header>
+  <nav>
+    <div class="logo">📚 StudentData</div>
+    <div class="nav-links">
+      <a href="/api/index.html"><i class="fa-solid fa-house"></i> Accueil</a>
+      <a href="/api/login.html" class="active"><i class="fa-solid fa-right-to-bracket"></i> Connexion</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <div class="form-container">
+    <h2><i class="fa-solid fa-lock"></i> Connexion</h2>
+    
+    <!-- Zone d'alerte ergonomique (Heuristiques H9/H5) -->
+    <div id="alert" class="alert alert-error" style="display:none;"></div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="email">Adresse Email</label>
+        <input type="email" id="email" name="email" placeholder="etudiant@epo.bf" required>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <!-- Wrapper pour afficher/masquer le mot de passe (H5) -->
+        <div class="password-wrapper">
+          <input type="password" id="password" name="password" placeholder="••••••••" required>
+          <button type="button" class="password-toggle-btn" id="passwordToggle" aria-label="Afficher le mot de passe">
+            <i class="fa-solid fa-eye" id="toggleIcon"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Bouton de connexion avec loader intégré (Heuristique H1) -->
+      <button type="submit" class="btn-primary" id="submitBtn" style="width: 100%; margin-top: 1rem;">
+        <span id="btnText"><i class="fa-solid fa-right-to-bracket"></i> Se connecter</span>
+        <div class="spinner" id="btnSpinner" style="width: 20px; height: 20px; border-width: 2px; border-top-color: white; display: none;"></div>
+      </button>
+    </form>
+
+    <p style="margin-top: 1.5rem; text-align: center; font-size: 0.88rem; color: var(--text-secondary);">
+      Pas encore de compte ? Contactez l'administration de l'EPO pour obtenir vos accès.
+    </p>
+  </div>
+</main>
+
+<footer>
+  <p>&copy; 2026 StudentData - École Polytechnique de Ouagadougou (EPO)</p>
+</footer>
+
+<script>
+  // Gestion de l'affichage/masquage du mot de passe (H5 Prévention d'erreur)
+  const passwordInput = document.getElementById('password');
+  const passwordToggle = document.getElementById('passwordToggle');
+  const toggleIcon = document.getElementById('toggleIcon');
+
+  passwordToggle.addEventListener('click', () => {
+      if (passwordInput.type === 'password') {
+          passwordInput.type = 'text';
+          toggleIcon.className = 'fa-solid fa-eye-slash';
+          passwordToggle.setAttribute('aria-label', 'Masquer le mot de passe');
+      } else {
+          passwordInput.type = 'password';
+          toggleIcon.className = 'fa-solid fa-eye';
+          passwordToggle.setAttribute('aria-label', 'Afficher le mot de passe');
+      }
+  });
+
+  // Soumission du formulaire
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const alertDiv = document.getElementById('alert');
+      const submitBtn = document.getElementById('submitBtn');
+      const btnText = document.getElementById('btnText');
+      const btnSpinner = document.getElementById('btnSpinner');
+
+      // Masquer l'alerte
+      alertDiv.style.display = 'none';
+
+      // Afficher le statut de chargement (Heuristique H1) et désactiver le bouton pour éviter les doubles clics (H5)
+      submitBtn.disabled = true;
+      btnText.style.display = 'none';
+      btnSpinner.style.display = 'block';
+
+      try {
+          console.log('Tentative de connexion pour:', email);
+
+          // Appel API de connexion
+          const response = await fetch(`/api/auth/login?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded'
+              }
+          });
+
+          console.log('Status réponse:', response.status);
+
+          if (!response.ok) {
+              // Gestion des codes serveurs spécifiques de façon humaine (Heuristique H9)
+              if (response.status === 401 || response.status === 403) {
+                  throw new Error("Identifiants incorrects. Veuillez vérifier votre email et mot de passe.");
+              } else if (response.status === 404) {
+                  throw new Error("Compte inexistant. Veuillez contacter votre administration.");
+              } else {
+                  throw new Error(`Erreur serveur (${response.status}). Veuillez réessayer dans quelques instants.`);
+              }
+          }
+
+          const result = await response.json();
+          console.log('Résultat:', result);
+
+          if (result.success) {
+              // Stockage de la session
+              sessionStorage.setItem('user', JSON.stringify(result.user));
+              sessionStorage.setItem('token', btoa(`${email}:${password}`));
+
+              // Gestion ergonomique de la redirection d'intention (Heuristique H2)
+              const urlParams = new URLSearchParams(window.location.search);
+              const redirectAction = urlParams.get('redirect');
+              const filiereParam = urlParams.get('filiere');
+
+              if (result.user.role === 'ADMIN') {
+                  window.location.href = '/api/admin.html';
+              } else {
+                  if (redirectAction === 'filiere' && filiereParam) {
+                      // Rediriger vers le dashboard avec pré-sélection de la filière
+                      window.location.href = `/api/dashboard.html?filiere=${encodeURIComponent(filiereParam)}`;
+                  } else {
+                      window.location.href = '/api/dashboard.html';
+                  }
+              }
+          } else {
+              // Message retourné par l'API
+              throw new Error(result.message || "Échec de l'authentification.");
+          }
+      } catch (error) {
+          console.error('Erreur détaillée:', error);
+          
+          // Heuristique H9 : Message d'aide précis et réparable
+          alertDiv.style.display = 'flex';
+          alertDiv.innerHTML = `<i class="fa-solid fa-circle-exclamation" style="font-size: 1.1rem;"></i> <span>${escapeHtml(error.message)}</span>`;
+      } finally {
+          // Rétablir l'état du bouton (Visibilité du statut - H1)
+          submitBtn.disabled = false;
+          btnText.style.display = 'inline-flex';
+          btnSpinner.style.display = 'none';
+      }
+  });
+
+  function escapeHtml(str) {
+      if (!str) return '';
+      return str
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+  }
+</script>
+</body>
+</html>

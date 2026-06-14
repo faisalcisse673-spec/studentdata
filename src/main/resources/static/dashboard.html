@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - StudentData</title>
+  <link rel="stylesheet" href="/api/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* Spécificités locales du Dashboard */
+    .dashboard-header-space {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+    
+    .search-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 1.5rem;
+        align-items: flex-end;
+    }
+
+    .form-group-btn {
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: flex-end;
+    }
+
+    .upload-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background: var(--blanc);
+        padding: 2rem;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+    }
+  </style>
+</head>
+<body>
+<header>
+  <nav>
+    <div class="logo">📚 StudentData</div>
+    <div class="nav-links">
+      <span id="userName">Chargement...</span>
+      <a href="/api/dashboard.html"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+      <a href="/api/admin.html" id="adminLink" style="display: none;"><i class="fa-solid fa-user-shield"></i> Administration</a>
+      <!-- Bouton Notifications avec Badge Rouge -->
+      <a href="#" onclick="showNotifications()" id="notifBtn" title="Notifications">
+        <i class="fa-solid fa-bell"></i>
+        <span id="notifCount" style="background: var(--rouge-error); color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.75rem; font-weight: 700; margin-left: -5px; display: none;">0</span>
+      </a>
+      <a href="#" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <div class="hero" style="padding: 3rem 2rem; margin-bottom: 2rem;">
+    <h1>Espace Étudiant</h1>
+    <p>Recherchez des supports de cours ou partagez des documents avec vos camarades</p>
+  </div>
+
+  <div class="dashboard-header-space">
+    <!-- Onglets de Navigation Ergonomiques (Heuristique H4/H2) -->
+    <div class="tabs">
+      <button class="tab active" id="tab-btn-recherche" onclick="showTab('recherche')">
+        <i class="fa-solid fa-magnifying-glass"></i> Rechercher
+      </button>
+      <button class="tab" id="tab-btn-publier" onclick="showTab('publier')">
+        <i class="fa-solid fa-cloud-arrow-up"></i> Publier une ressource
+      </button>
+      <button class="tab" id="tab-btn-soumissions" onclick="showTab('soumissions')">
+        <i class="fa-solid fa-list-check"></i> Mes soumissions
+      </button>
+    </div>
+
+    <!-- ─── TAB RECHERCHE ─── -->
+    <div id="tab-recherche" class="tab-content active">
+      <div class="admin-section" style="border-top: 3px solid var(--vert-primary);">
+        <h3><i class="fa-solid fa-filter"></i> Critères de recherche</h3>
+        
+        <div class="search-grid">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="matiereSelect">Matière</label>
+            <input list="matiereList" id="matiereSelect" placeholder="Saisir la matière..." autocomplete="off">
+            <datalist id="matiereList"></datalist>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="anneeSelect">Année académique</label>
+            <input type="text" id="anneeSelect" placeholder="Ex: 2025-2026">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="semestreSelect">Semestre</label>
+            <select id="semestreSelect">
+              <option value="">Tous</option>
+              <option value="1">Semestre 1</option>
+              <option value="2">Semestre 2</option>
+              <option value="3">Semestre 3</option>
+              <option value="4">Semestre 4</option>
+              <option value="5">Semestre 5</option>
+              <option value="6">Semestre 6</option>
+              <option value="7">Semestre 7</option>
+              <option value="8">Semestre 8</option>
+              <option value="9">Semestre 9</option>
+              <option value="10">Semestre 10</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="typeSelect">Type de document</label>
+            <select id="typeSelect">
+              <option value="all">Tous</option>
+              <option value="TD">TD</option>
+              <option value="DEVOIR">Devoir</option>
+              <option value="CORRECTION">Correction</option>
+            </select>
+          </div>
+
+          <div class="form-group-btn" style="margin-bottom: 0;">
+            <button id="searchBtn" class="btn-primary" style="width: 100%; height: 42px;">
+              <i class="fa-solid fa-magnifying-glass"></i> Rechercher
+            </button>
+          </div>
+        </div>
+
+        <!-- Zone d'affichage des résultats -->
+        <div id="ressourcesList" style="margin-top: 2rem;">
+            <div style="text-align: center; color: var(--slate-400); padding: 3rem 0;">
+                <i class="fa-solid fa-folder-open" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                <p>Spécifiez vos critères et cliquez sur Rechercher.</p>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── TAB PUBLIER ─── -->
+    <div id="tab-publier" class="tab-content">
+      <div class="upload-container">
+        <h3 style="margin-bottom: 1.5rem; color: var(--vert-primary); display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-file-circle-plus"></i> Publier une ressource pédagogique
+        </h3>
+        
+        <div id="uploadResult"></div>
+
+        <form id="uploadForm" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="titre">Titre du document</label>
+            <input type="text" id="titre" placeholder="Ex: TD 2 - Équations Différentielles" required>
+          </div>
+
+          <div class="form-group">
+            <label for="description">Description (facultatif)</label>
+            <textarea id="description" rows="3" placeholder="Description courte du document..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="type">Type de document</label>
+            <select id="type">
+              <option value="TD">TD</option>
+              <option value="DEVOIR">Devoir</option>
+              <option value="CORRECTION">Correction</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="matiereUpload">Matière académique</label>
+            <input list="matiereListUpload" id="matiereUpload" placeholder="Rechercher la matière..." required autocomplete="off">
+            <datalist id="matiereListUpload"></datalist>
+          </div>
+
+          <div class="form-group">
+            <label for="anneeUpload">Année académique</label>
+            <input type="text" id="anneeUpload" placeholder="Ex: 2025-2026" required>
+          </div>
+
+          <div class="form-group">
+            <label for="semestreUpload">Semestre</label>
+            <select id="semestreUpload" required>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+              <option value="10">10</option>
+            </select>
+          </div>
+
+          <!-- Zone Drag & Drop Ergonomique (Signifiant/Affordance H2) -->
+          <div class="form-group">
+            <label>Fichier à soumettre</label>
+            <div class="drag-drop-zone" id="dropZone">
+              <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+              <p>Glissez-déposez le fichier ici ou <span class="browse-btn">parcourez vos dossiers</span></p>
+              <span class="file-name" id="fileNameDisplay"></span>
+            </div>
+            <!-- Caché par défaut, activé par le clic sur la zone -->
+            <input type="file" id="fileUpload" class="file-input-wrapper" accept=".pdf,.doc,.docx,.txt,.zip" required>
+          </div>
+
+          <button type="submit" class="btn-primary" id="uploadSubmitBtn" style="width: 100%; margin-top: 1rem; height: 46px;">
+            <span id="uploadBtnText"><i class="fa-solid fa-paper-plane"></i> Soumettre à la validation</span>
+            <div class="spinner" id="uploadBtnSpinner" style="width: 20px; height: 20px; border-width: 2px; border-top-color: white; display: none; margin: 0 auto;"></div>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ─── TAB SOUMISSIONS ─── -->
+    <div id="tab-soumissions" class="tab-content">
+      <div class="admin-section" style="border-top: 3px solid var(--vert-primary);">
+        <h3><i class="fa-solid fa-list-check"></i> Historique de mes soumissions</h3>
+        <div id="mesSoumissionsList" style="margin-top: 1.5rem;">
+            <!-- Rempli par JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Notifications Glassmorphism (Heuristique H3 & H10) -->
+  <div id="notifModal" class="modal">
+    <div class="modal-content" style="max-width: 460px;">
+        <span class="close" onclick="closeNotifications()">&times;</span>
+        <h3 style="color: var(--vert-primary); border-bottom: 2px solid var(--jaune-accent); padding-bottom: 0.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-bell"></i> Mes Notifications
+        </h3>
+        <div id="notifList" style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem;">
+            <!-- Rempli par JS -->
+        </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <p>&copy; 2026 StudentData - École Polytechnique de Ouagadougou (EPO)</p>
+</footer>
+
+<script src="/api/js/api.js"></script>
+<script>
+  let currentUser = null;
+  let selectedFile = null;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Validation de l'authentification (H5)
+      const userStr = sessionStorage.getItem('user');
+      if (!userStr) {
+          window.location.href = '/api/login.html';
+          return;
+      }
+
+      currentUser = JSON.parse(userStr);
+      document.getElementById('userName').innerHTML = `<i class="fa-solid fa-user-circle"></i> ${currentUser.prenom || ''} ${currentUser.nom || currentUser.email}`;
+      if (currentUser.role === 'ADMIN') {
+          document.getElementById('adminLink').style.display = 'inline-block';
+      }
+      
+      // 2. Chargement des données fondamentales (Matières)
+      await loadMatieres();
+      await loadNotifications();
+
+      // 3. Gestion des redirections intentionnelles (Heuristique H2)
+      const urlParams = new URLSearchParams(window.location.search);
+      const filiereParam = urlParams.get('filiere');
+      if (filiereParam) {
+          // Si redirection, on tente d'aider l'étudiant
+          console.log("Intention détectée pour la filière:", filiereParam);
+          // On peut préremplir l'année académique courante
+          document.getElementById('anneeSelect').value = "2025-2026";
+          
+          // Recherche automatique de toutes les ressources liées
+          setTimeout(() => {
+              document.getElementById('searchBtn').click();
+          }, 400);
+      } else {
+          // Recherche globale par défaut pour afficher les documents récents
+          setTimeout(() => {
+              document.getElementById('searchBtn').click();
+          }, 400);
+      }
+
+      // 4. Initialisation du Drag and Drop (IHM Affordance)
+      initDragAndDrop();
+  });
+
+  // Switch d'onglets ergonomiques (H4 / H2)
+  function showTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(btn => btn.classList.remove('active'));
+
+      document.getElementById('tab-' + tabName).classList.add('active');
+      document.getElementById('tab-btn-' + tabName).classList.add('active');
+      
+      if (tabName === 'soumissions') {
+          loadMesSoumissions();
+      } else if (tabName === 'recherche') {
+          // Déclencher automatiquement une recherche globale à l'ouverture de l'onglet
+          setTimeout(() => {
+              document.getElementById('searchBtn').click();
+          }, 100);
+      }
+  }
+
+  // --- Gestion du Drag and Drop (H2 / H4) ---
+  function initDragAndDrop() {
+      const dropZone = document.getElementById('dropZone');
+      const fileInput = document.getElementById('fileUpload');
+
+      // Clic sur la zone ouvre la sélection système
+      dropZone.addEventListener('click', () => fileInput.click());
+
+      // Drag Over
+      dropZone.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          dropZone.classList.add('dragover');
+      });
+
+      // Drag Leave
+      ['dragleave', 'dragend'].forEach(type => {
+          dropZone.addEventListener(type, () => {
+              dropZone.classList.remove('dragover');
+          });
+      });
+
+      // Drop File
+      dropZone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          dropZone.classList.remove('dragover');
+          
+          if (e.dataTransfer.files.length > 0) {
+              fileInput.files = e.dataTransfer.files;
+              handleFileSelected(fileInput.files[0]);
+          }
+      });
+
+      // Sélection manuelle
+      fileInput.addEventListener('change', (e) => {
+          if (e.target.files.length > 0) {
+              handleFileSelected(e.target.files[0]);
+          }
+      });
+  }
+
+  function handleFileSelected(file) {
+      selectedFile = file;
+      const display = document.getElementById('fileNameDisplay');
+      display.style.display = 'block';
+      display.innerHTML = `<i class="fa-solid fa-file-circle-check"></i> ${escapeHtml(file.name)} (${(file.size / 1024 / 1024).toFixed(2)} Mo)`;
+  }
+
+  // --- Chargement des Notifications ---
+  async function loadNotifications() {
+      try {
+          const response = await fetch(`/api/notifications/user/${currentUser.id}`);
+          const notifs = await response.json();
+          const unread = notifs.filter(n => !n.lu);
+          const countElem = document.getElementById('notifCount');
+          if (unread.length > 0) {
+              countElem.style.display = 'inline-block';
+              countElem.textContent = unread.length;
+          } else {
+              countElem.style.display = 'none';
+          }
+      } catch (e) { 
+          console.error('Erreur notifications', e); 
+      }
+  }
+
+  async function showNotifications() {
+      document.getElementById('notifModal').style.display = 'block';
+      const listDiv = document.getElementById('notifList');
+      listDiv.innerHTML = `
+          <div class="loading">
+              <div class="spinner" style="width:24px; height:24px;"></div>
+          </div>`;
+
+      try {
+          const response = await fetch(`/api/notifications/user/${currentUser.id}`);
+          const notifs = await response.json();
+          if (notifs.length === 0) {
+              listDiv.innerHTML = '<p style="text-align:center; padding:1rem; color:var(--text-secondary);">Aucune notification</p>';
+              return;
+          }
+          listDiv.innerHTML = notifs.map(n => `
+              <div style="padding: 0.85rem; border:1px solid var(--border-color); border-radius:var(--radius-md); background: ${n.lu ? 'transparent' : 'var(--vert-light)'}; display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem;">
+                  <div>
+                      <p style="font-size:0.9rem; font-weight: 500; color:var(--text-primary);">${escapeHtml(n.message)}</p>
+                      <small style="color:var(--text-muted);"><i class="fa-regular fa-clock"></i> ${new Date(n.dateCreation).toLocaleString()}</small>
+                  </div>
+                  ${!n.lu ? `<button onclick="marquerLu(${n.id})" style="border:none; background:none; color:var(--vert-soft); cursor:pointer; font-weight:700; font-size:0.8rem;" title="Marquer lu"><i class="fa-solid fa-check-double"></i></button>` : ''}
+              </div>
+          `).join('');
+      } catch (e) { 
+          console.error(e); 
+          listDiv.innerHTML = '<p class="alert alert-error">Erreur de chargement des notifications</p>';
+      }
+  }
+
+  function closeNotifications() {
+      document.getElementById('notifModal').style.display = 'none';
+      loadNotifications();
+  }
+
+  async function marquerLu(id) {
+      try {
+          await fetch(`/api/notifications/${id}/lu`, { method: 'PUT' });
+          showNotifications();
+      } catch (e) { 
+          console.error(e); 
+      }
+  }
+
+  // --- Chargement de l'Historique ---
+  async function loadMesSoumissions() {
+      const listDiv = document.getElementById('mesSoumissionsList');
+      listDiv.innerHTML = `
+          <div class="loading">
+              <div class="spinner"></div>
+              <span>Récupération de vos soumissions...</span>
+          </div>`;
+
+      try {
+          const response = await fetch(`/api/ressources/mes-soumissions/${currentUser.id}`);
+          const ressources = await response.json();
+          
+          if (ressources.length === 0) {
+              listDiv.innerHTML = `
+                  <div style="text-align: center; color: var(--slate-400); padding: 3rem 0;">
+                      <i class="fa-solid fa-file-circle-xmark" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                      <p>Vous n'avez soumis aucun document pédagogique pour l'instant.</p>
+                  </div>`;
+              return;
+          }
+
+          listDiv.innerHTML = `
+              <div class="filiere-grid">
+                  ${ressources.map(r => {
+                      let statusBadge = 'badge-pending';
+                      let statusIcon = 'fa-hourglass-half';
+                      let statusDisplay = r.statut;
+                      
+                      if (r.statut === 'APPROUVEE' || r.statut === 'VALIDE') {
+                          statusBadge = 'badge-validated';
+                          statusIcon = 'fa-circle-check';
+                          statusDisplay = 'APPROUVÉE';
+                      } else if (r.statut === 'REJETEE' || r.statut === 'REJETE') {
+                          statusBadge = 'badge-rejected';
+                          statusIcon = 'fa-circle-xmark';
+                          statusDisplay = 'REJETÉE';
+                      } else if (r.statut === 'EN_REVISION' || r.statut === 'REVISION') {
+                          statusBadge = 'badge-pending';
+                          statusIcon = 'fa-pen-to-square';
+                          statusDisplay = 'À RÉVISER';
+                      } else if (r.statut === 'EN_ATTENTE') {
+                          statusDisplay = 'EN ATTENTE';
+                      }
+
+                      return `
+                          <div class="filiere-card" style="border-top-color: ${(r.statut === 'APPROUVEE' || r.statut === 'VALIDE') ? 'var(--vert-soft)' : ((r.statut === 'REJETEE' || r.statut === 'REJETE') ? 'var(--rouge-error)' : 'var(--jaune-accent)')}">
+                              <div>
+                                  <h3>${escapeHtml(r.titre)}</h3>
+                                  <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:0.25rem;">
+                                      Matière : <strong>${escapeHtml(r.matiere?.nom || 'Inconnue')}</strong>
+                                  </p>
+                                  <div style="margin-top: 0.75rem;">
+                                      <span class="badge ${statusBadge}"><i class="fa-solid ${statusIcon}"></i> ${statusDisplay}</span>
+                                  </div>
+                                  ${r.commentaireRejet ? `
+                                      <div style="margin-top: 0.75rem; padding: 0.5rem; background: var(--rouge-pale); border-radius: var(--radius-sm); border-left: 3px solid var(--rouge-error);">
+                                          <p style="font-size: 0.8rem; color: var(--rouge-text);"><strong>Motif :</strong> ${escapeHtml(r.commentaireRejet)}</p>
+                                      </div>` : ''}
+                              </div>
+                              <small style="color:var(--text-muted);"><i class="fa-regular fa-calendar-days"></i> Soumis le : ${new Date(r.dateUpload).toLocaleDateString()}</small>
+                          </div>
+                      `;
+                  }).join('')}
+              </div>
+          `;
+      } catch (error) {
+          console.error(error);
+          listDiv.innerHTML = '<div class="alert alert-error"><i class="fa-solid fa-circle-exclamation"></i> Impossible de charger vos soumissions.</div>';
+      }
+  }
+
+  document.getElementById('logoutBtn').onclick = (e) => {
+      e.preventDefault();
+      sessionStorage.clear();
+      window.location.href = '/api/index.html';
+  };
+
+  // --- Chargement des matières ---
+  async function loadMatieres() {
+      try {
+          const response = await fetch('/api/matieres');
+          const matieres = await response.json();
+
+          window.matieresData = matieres;
+          const datalist1 = document.getElementById('matiereList');
+          const datalist2 = document.getElementById('matiereListUpload');
+          const options = matieres.map(m => `<option value="${m.nom}"></option>`).join('');
+
+          if (datalist1) datalist1.innerHTML = options;
+          if (datalist2) datalist2.innerHTML = options;
+      } catch (error) {
+          console.error('Erreur chargement matieres:', error);
+      }
+  }
+
+  // --- Recherche de ressources ---
+  document.getElementById('searchBtn').onclick = async () => {
+      const matiereNom = document.getElementById('matiereSelect').value;
+      const listDiv = document.getElementById('ressourcesList');
+      
+      let matiereId = '';
+      if (matiereNom && window.matieresData) {
+          const searchMatiere = matiereNom.toLowerCase().trim();
+          const m = window.matieresData.find(x => (x.nom || '').toLowerCase() === searchMatiere);
+          if (m) matiereId = m.id;
+      }
+      const type = document.getElementById('typeSelect').value;
+      const annee = document.getElementById('anneeSelect').value;
+      const semestre = document.getElementById('semestreSelect').value;
+
+      // H1 : Visibility of System Status (Spinner de recherche)
+      listDiv.innerHTML = `
+          <div class="loading">
+              <div class="spinner"></div>
+              <span>Recherche de documents en cours...</span>
+          </div>`;
+
+      let query = [];
+      if (matiereId) query.push(`matiereId=${matiereId}`);
+      if (type && type !== 'all') query.push(`type=${type}`);
+      if (annee) query.push(`anneeAcademique=${annee}`);
+      if (semestre) query.push(`semestre=${semestre}`);
+
+      try {
+          const response = await fetch(`/api/ressources/recherche?${query.join('&')}`);
+          let ressources = await response.json();
+
+          // Filtrer uniquement les ressources VALIDÉES pour les étudiants ordinaires
+          ressources = ressources.filter(r => r.statut === 'APPROUVEE' || r.statut === 'VALIDE');
+
+          if (ressources.length === 0) {
+              listDiv.innerHTML = `
+                  <div style="text-align: center; color: var(--slate-400); padding: 3rem 0;">
+                      <i class="fa-solid fa-magnifying-glass-minus" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                      <p>Aucune ressource validée ne correspond à vos critères de recherche.</p>
+                  </div>`;
+              return;
+          }
+
+          listDiv.innerHTML = `
+              <div class="filiere-grid">
+                  ${ressources.map(r => {
+                      const iconClass = r.originalFileName?.endsWith('.zip') ? 'fa-file-zipper' : 'fa-file-pdf';
+                      const colorStyle = r.originalFileName?.endsWith('.zip') ? 'color: var(--jaune-hover);' : 'color: var(--rouge-error);';
+
+                      return `
+                          <div class="filiere-card">
+                              <div>
+                                  <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                                      <i class="fa-solid ${iconClass}" style="font-size: 2rem; ${colorStyle}"></i>
+                                      <div>
+                                          <h3 style="font-size: 1.1rem; line-height: 1.3;">${escapeHtml(r.titre)}</h3>
+                                          <span class="badge badge-validated" style="font-size:0.68rem; padding: 0.1rem 0.5rem; margin-top:0.3rem;">${r.type}</span>
+                                      </div>
+                                  </div>
+                                  <p style="margin-top: 1rem; font-size: 0.88rem; color: var(--text-secondary);">
+                                      ${escapeHtml(r.description) || 'Aucune description fournie.'}
+                                  </p>
+                                  <div style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-secondary); display:flex; flex-direction:column; gap:0.25rem;">
+                                      <span>Matière : <strong>${escapeHtml(r.matiere?.nom || 'N/A')}</strong></span>
+                                      <span>Année : <strong>${escapeHtml(r.anneeAcademique || 'N/A')}</strong> | Semestre : <strong>${r.semestre}</strong></span>
+                                      <span>Auteur : <i class="fa-regular fa-envelope"></i> ${escapeHtml(r.auteur?.email || 'Inconnu')}</span>
+                                  </div>
+                              </div>
+                              <div style="display:flex; justify-content:space-between; align-items:center;">
+                                  <small style="color:var(--text-muted); font-size:0.75rem;"><i class="fa-regular fa-clock"></i> ${new Date(r.dateUpload).toLocaleDateString()}</small>
+                                  <button class="download-btn" onclick="telechargerFichier(${r.id}, '${escapeHtml(r.titre)}')">
+                                      <i class="fa-solid fa-download"></i> Télécharger
+                                  </button>
+                              </div>
+                          </div>
+                      `;
+                  }).join('')}
+              </div>
+          `;
+      } catch (error) {
+          console.error('Erreur recherche:', error);
+          listDiv.innerHTML = '<div class="alert alert-error"><i class="fa-solid fa-circle-exclamation"></i> Une erreur est survenue lors de la recherche.</div>';
+      }
+  };
+
+  // --- Soumission d'une ressource ---
+  document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const titre = document.getElementById('titre').value.trim();
+      const description = document.getElementById('description').value.trim();
+      const type = document.getElementById('type').value;
+      const matiereNom = document.getElementById('matiereUpload').value;
+      const annee = document.getElementById('anneeUpload').value.trim();
+      const semestre = document.getElementById('semestreUpload').value;
+      const file = document.getElementById('fileUpload').files[0];
+      const resultDiv = document.getElementById('uploadResult');
+      
+      const submitBtn = document.getElementById('uploadSubmitBtn');
+      const btnText = document.getElementById('uploadBtnText');
+      const btnSpinner = document.getElementById('uploadBtnSpinner');
+
+      // Validation H5
+      let matiereId = '';
+      if (matiereNom && window.matieresData) {
+          const searchMatiere = matiereNom.toLowerCase().trim();
+          const m = window.matieresData.find(x => (x.nom || '').toLowerCase() === searchMatiere);
+          if (m) matiereId = m.id;
+      }
+
+      // Au lieu de bloquer l'utilisateur, on permet l'envoi du texte libre s'il ne correspond à aucune matière existante.
+      // Le backend se chargera de la créer.
+
+      if (!file) {
+          resultDiv.innerHTML = '<div class="alert alert-error"><i class="fa-solid fa-triangle-exclamation"></i> Veuillez sélectionner un document valide à téléverser.</div>';
+          return;
+      }
+
+      // H1 / H5: Passer en état de chargement et désactiver le submit
+      resultDiv.innerHTML = '';
+      submitBtn.disabled = true;
+      btnText.style.display = 'none';
+      btnSpinner.style.display = 'block';
+
+      try {
+          // 1. Upload physique du fichier
+          const formData = new FormData();
+          formData.append('file', file);
+
+          const uploadResponse = await fetch('/api/files/upload', {
+              method: 'POST',
+              body: formData
+          });
+
+          if (!uploadResponse.ok) {
+              throw new Error('Impossible d\'envoyer le fichier physique sur le serveur.');
+          }
+
+          const fileName = await uploadResponse.text();
+
+          // 2. Enregistrement des métadonnées de la ressource
+          const ressource = {
+              titre: titre,
+              description: description,
+              type: type,
+              anneeAcademique: annee,
+              semestre: parseInt(semestre),
+              fileName: fileName,
+              originalFileName: file.name,
+              cheminFichier: fileName
+          };
+
+          // On envoie toujours matiereNom au backend pour qu'il puisse créer la matière si matiereId est vide
+          let uploadUrl = `/api/ressources/soumettre?auteurId=${currentUser.id}&matiereNom=${encodeURIComponent(matiereNom)}`;
+          if (matiereId) {
+              uploadUrl += `&matiereId=${matiereId}`;
+          }
+
+          const response = await fetch(uploadUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(ressource)
+          });
+
+          if (!response.ok) {
+              throw new Error('Erreur lors de la création de la fiche ressource.');
+          }
+
+          // H9 : Message d'erreur/succès clair et précis
+          resultDiv.innerHTML = `
+              <div class="alert alert-success">
+                  <i class="fa-solid fa-circle-check" style="font-size: 1.25rem;"></i>
+                  <span><strong>Félicitations !</strong> Votre ressource a été soumise avec succès. Elle apparaîtra sur la plateforme dès validation par l'administrateur.</span>
+              </div>
+          `;
+          
+          // Réinitialisation du formulaire (H3)
+          document.getElementById('uploadForm').reset();
+          document.getElementById('fileNameDisplay').style.display = 'none';
+          document.getElementById('fileNameDisplay').textContent = '';
+          selectedFile = null;
+
+          // Faire disparaître l'alerte après 6s
+          setTimeout(() => {
+              resultDiv.innerHTML = '';
+          }, 6000);
+          
+      } catch (error) {
+          console.error('Erreur:', error);
+          resultDiv.innerHTML = `
+              <div class="alert alert-error">
+                  <i class="fa-solid fa-circle-exclamation" style="font-size: 1.25rem;"></i>
+                  <span><strong>Erreur :</strong> ${escapeHtml(error.message)}</span>
+              </div>
+          `;
+      } finally {
+          // Rétablir le bouton
+          submitBtn.disabled = false;
+          btnText.style.display = 'inline-flex';
+          btnSpinner.style.display = 'none';
+      }
+  });
+
+  // --- Téléchargement sécurisé ---
+  async function telechargerFichier(ressourceId, titre) {
+      try {
+          const response = await fetch(`/api/ressources/${ressourceId}`);
+          const ressource = await response.json();
+
+          if (!ressource.fileName) {
+              alert('Ce fichier n\'est plus disponible sur le serveur.');
+              return;
+          }
+
+          // Utilisation de location.href au lieu de window.open pour éviter le blocage des popups par le navigateur
+          const downloadUrl = `/api/files/download/${ressource.fileName}?userId=${currentUser.id}&ressourceId=${ressource.id}`;
+          window.location.href = downloadUrl;
+      } catch (error) {
+          console.error('Erreur téléchargement:', error);
+          alert('Erreur lors du téléchargement du fichier.');
+      }
+  }
+
+  // Heuristique H3 : Fermeture modal par Echap ou clic extérieur
+  window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+          closeNotifications();
+      }
+  });
+
+  window.addEventListener('click', (e) => {
+      const modal = document.getElementById('notifModal');
+      if (e.target === modal) {
+          closeNotifications();
+      }
+  });
+
+  function escapeHtml(str) {
+      if (!str) return '';
+      return str
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+  }
+</script>
+</body>
+</html>

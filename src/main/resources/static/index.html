@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudentData - Plateforme Pédagogique EPO</title>
+    <link rel="stylesheet" href="/api/css/style.css">
+    <!-- Intégration de FontAwesome pour des icônes descriptives d'accessibilité -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<header>
+    <nav>
+        <div class="logo">📚 StudentData</div>
+        <div class="nav-links">
+            <a href="/api/index.html" class="active"><i class="fa-solid fa-house"></i> Accueil</a>
+            <a href="/api/login.html" id="loginNavLink"><i class="fa-solid fa-right-to-bracket"></i> Connexion</a>
+            <span id="userName" style="display:none;"></span>
+            <a href="/api/dashboard.html" id="dashboardNavLink" style="display:none;"><i class="fa-solid fa-gauge"></i> Mon Espace</a>
+            <a href="#" id="logoutBtn" style="display:none;"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
+        </div>
+    </nav>
+</header>
+
+<main>
+    <section class="hero">
+        <h1>Bienvenue sur StudentData</h1>
+        <p>Plateforme centralisée de ressources pédagogiques de l'École Polytechnique de Ouagadougou. Accédez librement aux TD, devoirs et corrections.</p>
+        <button onclick="window.location.href='/api/login.html'" class="btn-primary" id="heroActionBtn">
+            <i class="fa-solid fa-user-plus"></i> Accéder à mon espace
+        </button>
+    </section>
+
+    <section class="filieres">
+        <h2>Nos filières d'études</h2>
+        
+        <!-- Spinner de chargement principal (Heuristique H1) -->
+        <div id="mainLoading" class="loading">
+            <div class="spinner"></div>
+            <span>Chargement des filières académiques...</span>
+        </div>
+
+        <div class="filiere-grid" id="filiereGrid" style="display: none;">
+            <!-- Rempli dynamiquement -->
+        </div>
+    </section>
+</main>
+
+<!-- Modal des Ressources (Heuristique H3 & H5 & H9) -->
+<div id="resourcesModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h3 id="modalTitle">Ressources disponibles</h3>
+        <p id="modalDescription" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+            Voici la liste des ressources de cette filière. Pour les télécharger, veuillez vous connecter.
+        </p>
+        
+        <!-- Spinner de chargement modal (Heuristique H1) -->
+        <div id="modalLoading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <span>Chargement des documents...</span>
+        </div>
+
+        <div id="modalResourcesList" style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <!-- Rempli par JS -->
+        </div>
+    </div>
+</div>
+
+<footer>
+    <p>&copy; 2026 StudentData - École Polytechnique de Ouagadougou (EPO). Conçu pour l'Humain.</p>
+</footer>
+
+<script>
+    // Base de données de maquettage pour réduire le gouffre d'exécution (Heuristique H2/H5)
+    const mockRessources = {
+        "Genie informatique": [
+            { id: 1, titre: "TD 1 - Systèmes Distribués (RMI & RPC)", type: "TD", matiere: "Systèmes Distribués", format: "pdf" },
+            { id: 2, titre: "Correction Devoir 1 - Spring Boot & REST APIs", type: "CORRECTION", matiere: "Développement Web", format: "pdf" },
+            { id: 3, titre: "Cours Complet - Sécurité avec JWT (JSON Web Tokens)", type: "TD", matiere: "Sécurité Architectures", format: "zip" }
+        ],
+        "Genie des telecommunications": [
+            { id: 4, titre: "TD 2 - Routage OSPF & BGP avancé", type: "TD", matiere: "Réseaux IP", format: "pdf" },
+            { id: 5, titre: "Devoir Surveillé - Traitement numérique du Signal", type: "DEVOIR", matiere: "Traitement du Signal", format: "pdf" }
+        ],
+        "MPSI": [
+            { id: 6, titre: "TD 3 - Espaces Vectoriels & Algèbre Linéaire", type: "TD", matiere: "Algèbre 1", format: "pdf" },
+            { id: 7, titre: "Correction Devoir - Suites Réelles et Limites", type: "CORRECTION", matiere: "Analyse 1", format: "pdf" }
+        ],
+        "PCSI": [
+            { id: 8, titre: "TD 1 - Optique géométrique : Lentilles et miroirs", type: "TD", matiere: "Optique", format: "pdf" },
+            { id: 9, titre: "Devoir Maison - Premier Principe de la Thermodynamique", type: "DEVOIR", format: "pdf" }
+        ],
+        "BPST": [
+            { id: 10, titre: "TD 1 - Sciences des matériaux et contraintes", type: "TD", matiere: "Technologie", format: "pdf" }
+        ]
+    };
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Simuler un temps de chargement pour montrer le spinner (Visibilité du statut - H1)
+        setTimeout(async () => {
+            await loadFilieres();
+            document.getElementById('mainLoading').style.display = 'none';
+            document.getElementById('filiereGrid').style.display = 'grid';
+        }, 400);
+
+        checkAuthStatus();
+    });
+
+    async function loadFilieres() {
+        const grid = document.getElementById('filiereGrid');
+        
+        // Liste des filières académiques de l'EPO
+        const filieres = [
+            { nom: "Genie informatique", description: "Développement logiciel, architectures distribuées, bases de données et ingénierie logicielle." },
+            { nom: "Genie des telecommunications", description: "Réseaux d'accès, routage IP, sécurité réseau et technologies de télécommunication." },
+            { nom: "MPSI", description: "Mathématiques, Physique et Sciences de l'Ingénieur. Fondations théoriques solides." },
+            { nom: "PCSI", description: "Physique, Chimie et Sciences de l'Ingénieur. Approches expérimentales et fondamentaux." },
+            { nom: "BPST", description: "Brevet Professionnel des Sciences et Techniques. Formations appliquées et ateliers pratiques." }
+        ];
+
+        grid.innerHTML = filieres.map(f => `
+            <div class="filiere-card">
+                <div>
+                    <h3><i class="fa-solid fa-graduation-cap"></i> ${escapeHtml(f.nom)}</h3>
+                    <p style="margin-top: 0.5rem;">${escapeHtml(f.description)}</p>
+                </div>
+                <button class="card-action-btn" onclick="showResources('${escapeHtml(f.nom)}')">
+                    <i class="fa-solid fa-folder-open"></i> Découvrir les ressources
+                </button>
+            </div>
+        `).join('');
+    }
+
+    function checkAuthStatus() {
+        const userStr = sessionStorage.getItem('user');
+        const loginLink = document.getElementById('loginNavLink');
+        const dashboardLink = document.getElementById('dashboardNavLink');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userNameSpan = document.getElementById('userName');
+        const heroActionBtn = document.getElementById('heroActionBtn');
+
+        if (userStr) {
+            const user = JSON.parse(userStr);
+            if (loginLink) loginLink.style.display = 'none';
+            if (dashboardLink) {
+                dashboardLink.style.display = 'inline-flex';
+                dashboardLink.href = user.role === 'ADMIN' ? '/api/admin.html' : '/api/dashboard.html';
+            }
+            if (userNameSpan) {
+                userNameSpan.style.display = 'inline-block';
+                userNameSpan.innerHTML = `<i class="fa-solid fa-user"></i> ${user.prenom || ''} ${user.nom || user.email}`;
+            }
+            if (logoutBtn) {
+                logoutBtn.style.display = 'inline-flex';
+                logoutBtn.onclick = (e) => {
+                    e.preventDefault();
+                    sessionStorage.clear();
+                    window.location.href = '/api/index.html';
+                };
+            }
+            if (heroActionBtn) {
+                heroActionBtn.innerHTML = `<i class="fa-solid fa-gauge"></i> Accéder à mon tableau de bord`;
+                heroActionBtn.onclick = () => {
+                    window.location.href = user.role === 'ADMIN' ? '/api/admin.html' : '/api/dashboard.html';
+                };
+            }
+        }
+    }
+
+    function showResources(filiereNom) {
+        const modal = document.getElementById('resourcesModal');
+        const listDiv = document.getElementById('modalResourcesList');
+        const loadingDiv = document.getElementById('modalLoading');
+        const title = document.getElementById('modalTitle');
+        
+        title.innerHTML = `<i class="fa-solid fa-folder"></i> Ressources - ${filiereNom}`;
+        listDiv.innerHTML = '';
+        loadingDiv.style.display = 'flex';
+        modal.style.display = 'block';
+
+        // Simuler un léger délai réseau pour l'affordance H1
+        setTimeout(() => {
+            loadingDiv.style.display = 'none';
+            const ressources = mockRessources[filiereNom] || [];
+            
+            if (ressources.length === 0) {
+                listDiv.innerHTML = `
+                    <div class="alert alert-warning-style">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Aucune ressource disponible pour cette filière actuellement.
+                    </div>`;
+                return;
+            }
+
+            listDiv.innerHTML = ressources.map(r => {
+                // Associer une icône selon le format (Heuristique H2)
+                const iconClass = r.format === 'zip' ? 'fa-file-zipper' : 'fa-file-pdf';
+                const colorStyle = r.format === 'zip' ? 'color: #ca8a04;' : 'color: #c22d2d;';
+                
+                // Associer une classe badge selon le type
+                let badgeClass = 'badge-pending';
+                if (r.type === 'TD') badgeClass = 'badge-validated';
+                if (r.type === 'CORRECTION') badgeClass = 'badge-validated';
+                if (r.type === 'DEVOIR') badgeClass = 'badge-rejected';
+
+                return `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.85rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--slate-50);">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <i class="fa-solid ${iconClass}" style="font-size: 1.5rem; ${colorStyle}"></i>
+                            <div>
+                                <h4 style="font-size: 0.95rem; font-weight: 600; color: var(--text-primary);">${escapeHtml(r.titre)}</h4>
+                                <span class="badge ${badgeClass}" style="font-size: 0.7rem; padding: 0.1rem 0.5rem; margin-top: 0.25rem;">${r.type}</span>
+                            </div>
+                        </div>
+                        <!-- Bouton verrouillé prévenant l'erreur de téléchargement hors connexion (H5) -->
+                        <button class="download-btn" 
+                                onclick="redirectToLogin('${encodeURIComponent(filiereNom)}')" 
+                                title="Connexion requise pour télécharger"
+                                style="border-style: dashed; opacity: 0.85;">
+                            <i class="fa-solid fa-lock"></i> Télécharger
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }, 300);
+    }
+
+    function redirectToLogin(filiereNom) {
+        window.location.href = `/api/login.html?redirect=filiere&filiere=${filiereNom}`;
+    }
+
+    function closeModal() {
+        document.getElementById('resourcesModal').style.display = 'none';
+    }
+
+    // Heuristique H3 : Fermer la modal en tapant Echap ou en cliquant à l'extérieur
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    });
+
+    window.addEventListener('click', (e) => {
+        const modal = document.getElementById('resourcesModal');
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+</script>
+</body>
+</html>

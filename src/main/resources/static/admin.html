@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - StudentData</title>
+    <link rel="stylesheet" href="/api/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<header>
+    <nav>
+        <div class="logo">📚 StudentData - Admin</div>
+        <div class="nav-links">
+            <span id="userName">Chargement...</span>
+            <a href="/api/dashboard.html"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+            <a href="/api/admin.html" id="adminLink"><i class="fa-solid fa-user-shield"></i> Administration</a>
+            <a href="#" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
+        </div>
+    </nav>
+</header>
+
+<main>
+    <div class="hero" style="padding: 3rem 2rem; margin-bottom: 2rem;">
+        <h1>Panel Administrateur</h1>
+        <p>Gérez les comptes des étudiants et validez les ressources documentaires</p>
+    </div>
+
+    <div class="filieres">
+        <!-- Onglets d'administration (H4 Standards & Consistance) -->
+        <div class="tabs" style="margin-bottom: 1.5rem;">
+            <button class="tab active" id="tab-btn-users" onclick="showTab('users')">
+                <i class="fa-solid fa-users"></i> Gestion des utilisateurs
+            </button>
+            <button class="tab" id="tab-btn-ressources" onclick="showTab('ressources')">
+                <i class="fa-solid fa-file-shield"></i> Ressources en attente
+            </button>
+        </div>
+
+        <!-- ─── ONGLER UTILISATEURS ─── -->
+        <div id="tab-users" class="tab-content active">
+            <div class="admin-section" style="border-top: 3px solid var(--vert-primary);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                    <h3 style="margin-bottom: 0;"><i class="fa-solid fa-users-gear"></i> Utilisateurs inscrits</h3>
+                    <button class="btn-primary" onclick="showCreateUserModal()">
+                        <i class="fa-solid fa-user-plus"></i> Créer un utilisateur
+                    </button>
+                </div>
+                
+                <!-- Wrapper responsive pour tableaux (Robustesse / POUR) -->
+                <div class="table-wrapper">
+                    <table class="user-table" id="userTable">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Matricule</th>
+                            <th>Email</th>
+                            <th>Nom complet</th>
+                            <th>Filière</th>
+                            <th>Rôle</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 2rem;">
+                                <div class="spinner" style="width: 24px; height: 24px; margin: 0 auto 0.5rem;"></div>
+                                Chargement des comptes...
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── ONGLET RESSOURCES EN ATTENTE ─── -->
+        <div id="tab-ressources" class="tab-content">
+            <div class="admin-section" style="border-top: 3px solid var(--vert-primary);">
+                <h3 style="margin-bottom: 1.5rem;"><i class="fa-solid fa-file-shield"></i> Demandes de validation</h3>
+                
+                <div class="table-wrapper">
+                    <table class="ressource-table" id="ressourceTable">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Titre</th>
+                            <th>Type</th>
+                            <th>Matière</th>
+                            <th>Filière</th>
+                            <th>Auteur</th>
+                            <th>Date soumission</th>
+                            <th>Actions de modération</th>
+                        </tr>
+                        </thead>
+                        <tbody id="ressourceTableBody">
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 2rem;">
+                                <div class="spinner" style="width: 24px; height: 24px; margin: 0 auto 0.5rem;"></div>
+                                Chargement des ressources en attente...
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Modal Création Utilisateur (H3 / H5) -->
+<div id="userModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h3 style="color: var(--vert-primary); border-bottom: 2px solid var(--jaune-accent); padding-bottom: 0.5rem; margin-bottom: 1.25rem;">
+            <i class="fa-solid fa-user-plus"></i> Créer un nouvel utilisateur
+        </h3>
+        
+        <form id="createUserForm">
+            <div class="form-group">
+                <label for="newEmail">Adresse Email</label>
+                <input type="email" id="newEmail" placeholder="nom@epo.bf" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="newPassword">Mot de passe (facultatif)</label>
+                <div class="password-wrapper">
+                    <input type="password" id="newPassword" placeholder="Laisser vide pour générer automatiquement">
+                    <button type="button" class="password-toggle-btn" id="newPasswordToggle" aria-label="Afficher le mot de passe">
+                        <i class="fa-solid fa-eye" id="newToggleIcon"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="newNom">Nom</label>
+                    <input type="text" id="newNom" placeholder="Ex: SAWADOGO" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPrenom">Prénom</label>
+                    <input type="text" id="newPrenom" placeholder="Ex: Adama" required>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="newMatricule">N° Matricule</label>
+                    <input type="text" id="newMatricule" placeholder="Ex: EPO-12345">
+                </div>
+                <div class="form-group">
+                    <label for="newFiliere">Filière</label>
+                    <input type="text" id="newFiliere" placeholder="Ex: Genie informatique">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="newAnneeEtudes">Année d'études</label>
+                    <input type="text" id="newAnneeEtudes" placeholder="Ex: 3ème Année">
+                </div>
+                <div class="form-group">
+                    <label for="newRole">Rôle système</label>
+                    <select id="newRole">
+                        <option value="ETUDIANT">Étudiant</option>
+                        <option value="ENSEIGNANT">Enseignant</option>
+                        <option value="ADMIN">Administrateur</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem; justify-content: flex-end;">
+                <button type="button" class="btn-danger" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Annuler</button>
+                <button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Rejet (H3 / H9) -->
+<div id="rejectModal" class="modal">
+    <div class="modal-content" style="border-top-color: var(--rouge-error);">
+        <span class="close" onclick="closeRejectModal()">&times;</span>
+        <h3 style="color: var(--rouge-error); border-bottom: 2px solid var(--rouge-error); padding-bottom: 0.5rem; margin-bottom: 1.25rem;">
+            <i class="fa-solid fa-circle-xmark"></i> Rejeter la ressource pédagogique
+        </h3>
+        
+        <form id="rejectForm">
+            <div class="form-group">
+                <label for="rejectComment">Motif du rejet (transmis à l'auteur)</label>
+                <textarea id="rejectComment" rows="4" placeholder="Expliquez clairement à l'étudiant pourquoi le document est refusé..." required></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem; justify-content: flex-end;">
+                <button type="button" class="btn-primary" onclick="closeRejectModal()" style="background:var(--slate-200); color:var(--text-primary); box-shadow:none;"><i class="fa-solid fa-xmark"></i> Annuler</button>
+                <button type="submit" class="btn-danger"><i class="fa-solid fa-circle-xmark"></i> Confirmer le rejet</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Révision (H3 / H9) -->
+<div id="revisionModal" class="modal">
+    <div class="modal-content" style="border-top-color: var(--jaune-accent);">
+        <span class="close" onclick="closeRevisionModal()">&times;</span>
+        <h3 style="color: var(--jaune-accent); border-bottom: 2px solid var(--jaune-accent); padding-bottom: 0.5rem; margin-bottom: 1.25rem;">
+            <i class="fa-solid fa-pen-to-square"></i> Demander une révision
+        </h3>
+        
+        <form id="revisionForm">
+            <div class="form-group">
+                <label for="revisionComment">Modifications demandées</label>
+                <textarea id="revisionComment" rows="4" placeholder="Détaillez les corrections que l'étudiant doit apporter..." required></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem; justify-content: flex-end;">
+                <button type="button" class="btn-primary" onclick="closeRevisionModal()" style="background:var(--slate-200); color:var(--text-primary); box-shadow:none;"><i class="fa-solid fa-xmark"></i> Annuler</button>
+                <button type="submit" class="btn-warning"><i class="fa-solid fa-paper-plane"></i> Demander la révision</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<footer>
+    <p>&copy; 2026 StudentData - École Polytechnique de Ouagadougou (EPO) - Espace Admin</p>
+</footer>
+
+<script src="/api/js/api.js"></script>
+<script>
+    let currentUser = null;
+    let currentRessourceId = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        // 1. Validation sécurité d'IHM (H5)
+        const userStr = sessionStorage.getItem('user');
+        if (!userStr) {
+            window.location.href = '/api/login.html';
+            return;
+        }
+
+        currentUser = JSON.parse(userStr);
+
+        if (currentUser.role !== 'ADMIN') {
+            alert('Accès non autorisé. Vous devez posséder un compte administrateur.');
+            window.location.href = '/api/dashboard.html';
+            return;
+        }
+
+        document.getElementById('userName').innerHTML = `<i class="fa-solid fa-user-shield"></i> ${currentUser.prenom || ''} ${currentUser.nom || currentUser.email}`;
+
+        // 2. Chargement des données d'administration (H1)
+        await loadUsers();
+        await loadRessourcesEnAttente();
+
+        // 3. Init password toggle (H5)
+        initPasswordToggle();
+    });
+
+    document.getElementById('logoutBtn').onclick = (e) => {
+        e.preventDefault();
+        sessionStorage.clear();
+        window.location.href = '/api/index.html';
+    };
+
+    // Changement d'onglets (H4 / H2)
+    function showTab(tabName) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+
+        document.getElementById('tab-btn-' + tabName).classList.add('active');
+        document.getElementById('tab-' + tabName).classList.add('active');
+        
+        if (tabName === 'users') {
+            loadUsers();
+        } else {
+            loadRessourcesEnAttente();
+        }
+    }
+
+    // --- Gestion des Utilisateurs ---
+    async function loadUsers() {
+        const tbody = document.getElementById('userTableBody');
+        try {
+            const response = await fetch('/api/admin/users');
+            const users = await response.json();
+
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:2rem; color:var(--text-secondary);">Aucun utilisateur enregistré</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = users.map(u => {
+                // Définition de badges selon le rôle (H2 / H4 / Daltonisme)
+                let roleBadge = 'badge-pending';
+                if (u.role === 'ADMIN') roleBadge = 'badge-rejected'; // rouge/cerise
+                else if (u.role === 'ENSEIGNANT') roleBadge = 'badge-validated'; // vert
+
+                // Badge de statut actif/inactif
+                const statusBadge = u.actif ? 'badge-validated' : 'badge-rejected';
+                const statusIcon = u.actif ? 'fa-check' : 'fa-xmark';
+                const statusText = u.actif ? 'Actif' : 'Inactif';
+
+                return `
+                    <tr>
+                        <td><strong>${u.id}</strong></td>
+                        <td>${escapeHtml(u.matricule || 'N/A')}</td>
+                        <td>${escapeHtml(u.email)}</td>
+                        <td>${escapeHtml(u.nom || '')} ${escapeHtml(u.prenom || '')}</td>
+                        <td>${escapeHtml(u.filiere || 'N/A')}</td>
+                        <td><span class="badge ${roleBadge}" style="font-size:0.7rem;">${u.role}</span></td>
+                        <td><span class="badge ${statusBadge}"><i class="fa-solid ${statusIcon}"></i> ${statusText}</span></td>
+                        <td>
+                            <div class="actions">
+                                <button class="btn-warning" onclick="toggleUserStatus(${u.id}, ${!u.actif})" style="font-size:0.75rem; padding:0.4rem 0.8rem;">
+                                    <i class="fa-solid ${u.actif ? 'fa-user-slash' : 'fa-user-check'}"></i> ${u.actif ? 'Désactiver' : 'Activer'}
+                                </button>
+                                <button class="btn-danger" onclick="deleteUser(${u.id})" style="font-size:0.75rem; padding:0.4rem 0.8rem;">
+                                    <i class="fa-solid fa-trash-can"></i> Supprimer
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (error) {
+            console.error('Erreur chargement utilisateurs:', error);
+            tbody.innerHTML = '<tr><td colspan="8" class="alert alert-error" style="text-align:center;"><i class="fa-solid fa-circle-exclamation"></i> Impossible de charger les utilisateurs.</td></tr>';
+        }
+    }
+
+    async function toggleUserStatus(id, activer) {
+        // Prévention des lapsus (H5 - confirmation explicite)
+        const actionText = activer ? 'activer' : 'désactiver';
+        if (!confirm(`Confirmez-vous la volonté de ${actionText} cet utilisateur ?`)) return;
+
+        const action = activer ? 'activer' : 'desactiver';
+        try {
+            const response = await fetch(`/api/admin/users/${id}/${action}`, { method: 'PUT' });
+            if (response.ok) {
+                await loadUsers();
+            } else {
+                alert('Erreur lors du changement de statut de l\'utilisateur.');
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Erreur serveur de communication.');
+        }
+    }
+
+    async function deleteUser(id) {
+        // Prévention des lapsus critiques (H5 - confirmation explicite)
+        if (confirm('Attention : Cette action supprimera définitivement le compte utilisateur. Voulez-vous continuer ?')) {
+            try {
+                const response = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    await loadUsers();
+                } else {
+                    alert('Erreur lors de la suppression de l\'utilisateur.');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur serveur de communication.');
+            }
+        }
+    }
+
+    // --- Gestion des Ressources en Attente ---
+    async function loadRessourcesEnAttente() {
+        const tbody = document.getElementById('ressourceTableBody');
+        try {
+            const response = await fetch('/api/admin/ressources/en-attente');
+            const ressources = await response.json();
+
+            if (ressources.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:2rem; color:var(--text-secondary);"><i class="fa-solid fa-circle-check" style="color:var(--vert-soft)"></i> Aucune ressource en attente de modération</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = ressources.map(r => `
+                <tr>
+                    <td><strong>${r.id}</strong></td>
+                    <td>${escapeHtml(r.titre)}</td>
+                    <td><span class="badge badge-pending" style="font-size:0.7rem; background:#cbd5e1; color:var(--slate-800);">${r.type}</span></td>
+                    <td>${escapeHtml(r.matiere?.nom || 'N/A')}</td>
+                    <td>${escapeHtml(r.filiere?.nom || 'N/A')}</td>
+                    <td><i class="fa-regular fa-envelope"></i> ${escapeHtml(r.auteur?.email || 'N/A')}</td>
+                    <td><i class="fa-regular fa-calendar"></i> ${new Date(r.dateUpload).toLocaleDateString()}</td>
+                    <td>
+                        <div class="actions">
+                            <button class="btn-success" onclick="validerRessource(${r.id})" style="font-size:0.75rem; padding:0.4rem 0.8rem;">
+                                <i class="fa-solid fa-check"></i> Valider
+                            </button>
+                            <button class="btn-danger" onclick="ouvrirRejetModal(${r.id})" style="font-size:0.75rem; padding:0.4rem 0.8rem;">
+                                <i class="fa-solid fa-xmark"></i> Rejeter
+                            </button>
+                            <button class="btn-warning" onclick="ouvrirRevisionModal(${r.id})" style="font-size:0.75rem; padding:0.4rem 0.8rem;">
+                                <i class="fa-solid fa-pen-to-square"></i> Révision
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (error) {
+            console.error('Erreur chargement ressources:', error);
+            tbody.innerHTML = '<tr><td colspan="8" class="alert alert-error" style="text-align:center;"><i class="fa-solid fa-circle-exclamation"></i> Impossible de charger les ressources en attente.</td></tr>';
+        }
+    }
+
+    async function validerRessource(id) {
+        if (!confirm('Voulez-vous valider et publier cette ressource pédagogique ?')) return;
+
+        try {
+            const response = await fetch(`/api/admin/ressources/${id}/valider?valideurId=${currentUser.id}`, { method: 'PUT' });
+            if (response.ok) {
+                await loadRessourcesEnAttente();
+            } else {
+                alert('Erreur lors de la validation.');
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Erreur serveur de communication.');
+        }
+    }
+
+    // Modals Modérations
+    function ouvrirRejetModal(id) {
+        currentRessourceId = id;
+        document.getElementById('rejectModal').style.display = 'block';
+    }
+
+    function closeRejectModal() {
+        document.getElementById('rejectModal').style.display = 'none';
+        document.getElementById('rejectComment').value = '';
+    }
+
+    document.getElementById('rejectForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const commentaire = document.getElementById('rejectComment').value.trim();
+
+        try {
+            const response = await fetch(`/api/admin/ressources/${currentRessourceId}/rejeter?valideurId=${currentUser.id}&commentaire=${encodeURIComponent(commentaire)}`, {
+                method: 'PUT'
+            });
+            if (response.ok) {
+                closeRejectModal();
+                await loadRessourcesEnAttente();
+            } else {
+                alert('Erreur lors de l\'enregistrement du rejet.');
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Erreur serveur.');
+        }
+    });
+
+    function ouvrirRevisionModal(id) {
+        currentRessourceId = id;
+        document.getElementById('revisionModal').style.display = 'block';
+    }
+
+    function closeRevisionModal() {
+        document.getElementById('revisionModal').style.display = 'none';
+        document.getElementById('revisionComment').value = '';
+    }
+
+    document.getElementById('revisionForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const commentaire = document.getElementById('revisionComment').value.trim();
+
+        try {
+            const response = await fetch(`/api/admin/ressources/${currentRessourceId}/revision?valideurId=${currentUser.id}&commentaire=${encodeURIComponent(commentaire)}`, {
+                method: 'PUT'
+            });
+            if (response.ok) {
+                closeRevisionModal();
+                await loadRessourcesEnAttente();
+            } else {
+                alert('Erreur lors de l\'envoi de la demande.');
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Erreur serveur.');
+        }
+    });
+
+    // Modal Création Utilisateur
+    function showCreateUserModal() {
+        document.getElementById('userModal').style.display = 'block';
+    }
+
+    function closeModal() {
+        document.getElementById('userModal').style.display = 'none';
+        document.getElementById('createUserForm').reset();
+    }
+
+    document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const user = {
+            email: document.getElementById('newEmail').value.trim(),
+            password: document.getElementById('newPassword').value || null,
+            nom: document.getElementById('newNom').value.trim().toUpperCase(),
+            prenom: document.getElementById('newPrenom').value.trim(),
+            matricule: document.getElementById('newMatricule').value.trim(),
+            filiere: document.getElementById('newFiliere').value.trim(),
+            anneeEtudes: document.getElementById('newAnneeEtudes').value.trim()
+        };
+        const role = document.getElementById('newRole').value;
+
+        try {
+            const response = await fetch(`/api/admin/users?role=${role}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(user)
+            });
+
+            if (response.ok) {
+                closeModal();
+                await loadUsers();
+            } else {
+                const errorText = await response.text();
+                alert('Impossible de créer le compte : ' + errorText);
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Erreur serveur de création.');
+        }
+    });
+
+    // Afficher / masquer mot de passe création (H5)
+    function initPasswordToggle() {
+        const passwordInput = document.getElementById('newPassword');
+        const passwordToggle = document.getElementById('newPasswordToggle');
+        const toggleIcon = document.getElementById('newToggleIcon');
+
+        passwordToggle.addEventListener('click', () => {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.className = 'fa-solid fa-eye-slash';
+                passwordToggle.setAttribute('aria-label', 'Masquer le mot de passe');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.className = 'fa-solid fa-eye';
+                passwordToggle.setAttribute('aria-label', 'Afficher le mot de passe');
+            }
+        });
+    }
+
+    // Heuristique H3 : Fermeture avec Echap ou Clic Extérieur
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeModal();
+            closeRejectModal();
+            closeRevisionModal();
+        }
+    });
+
+    window.onclick = function(event) {
+        if (event.target === document.getElementById('userModal')) {
+            closeModal();
+        }
+        if (event.target === document.getElementById('rejectModal')) {
+            closeRejectModal();
+        }
+        if (event.target === document.getElementById('revisionModal')) {
+            closeRevisionModal();
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+</script>
+</body>
+</html>
